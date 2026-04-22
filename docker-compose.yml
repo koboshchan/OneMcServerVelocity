@@ -52,6 +52,7 @@ services:
       ONLINE_MODE: "FALSE"
       TYPE: "VELOCITY"
       MEMORY: "512m"
+      # PLUGINS: 
     volumes:
       - ./velocitydata:/server
       - ./build/libs/OneMcServerVelocity-1.0.jar:/server/plugins/onemcservervelocity.jar

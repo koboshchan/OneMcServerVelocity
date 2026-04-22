@@ -42,22 +42,26 @@ public class PlayerChooseServerListener {
         ServerEntry entry = postLogin.playerTargets.get(uuid);
         if (entry == null) return; // no tracked entry – leave Velocity default
 
-        if (postLogin.pendingCrackAuth.contains(uuid)) {
-            // Cracked player needs auth first → route to limbo
-            if (!config.hasLimbo()) {
+        if (!config.hasLimbo()) {
+            if (postLogin.pendingCrackAuth.contains(uuid)) {
                 event.getPlayer().disconnect(Component.text(
                         "§cCracked players need a limbo server configured. Contact the admin."));
                 logger.warn("{} cracked but no limbo_server configured – disconnecting", event.getPlayer().getUsername());
                 return;
             }
-            RegisteredServer limbo = getOrRegisterLimbo();
-            event.setInitialServer(limbo);
-            logger.info("{} → limbo (awaiting auth)", event.getPlayer().getUsername());
-        } else {
-            // Premium or already-authed cracked → route to backend
+
             RegisteredServer backend = getOrRegisterBackend(entry);
             event.setInitialServer(backend);
             logger.info("{} → backend {}", event.getPlayer().getUsername(), backend.getServerInfo().getName());
+            return;
+        }
+
+        RegisteredServer limbo = getOrRegisterLimbo();
+        event.setInitialServer(limbo);
+        if (postLogin.pendingCrackAuth.contains(uuid)) {
+            logger.info("{} → limbo (awaiting auth)", event.getPlayer().getUsername());
+        } else {
+            logger.info("{} → limbo (awaiting transfer)", event.getPlayer().getUsername());
         }
     }
 

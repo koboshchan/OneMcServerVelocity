@@ -10,6 +10,7 @@ import com.velocitypowered.api.proxy.Player;
 import net.kyori.adventure.text.Component;
 import org.slf4j.Logger;
 
+import java.net.InetSocketAddress;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -80,9 +81,8 @@ public class LoginCommand implements SimpleCommand {
                     player.disconnect(Component.text("§cInternal error: no target server."));
                     return;
                 }
-                var backend = chooseServer.getOrRegisterBackend(entry);
-                player.createConnectionRequest(backend).fireAndForget();
-                logger.info("{} authenticated (login) → {}", player.getUsername(), backend.getServerInfo().getName());
+                player.transferToHost(new InetSocketAddress(entry.getTransferHost(), entry.getTransferPort()));
+                logger.info("{} authenticated (login) → {}:{}", player.getUsername(), entry.getTransferHost(), entry.getTransferPort());
 
             } catch (Exception e) {
                 logger.error("Login error for {}: {}", player.getUsername(), e.getMessage());

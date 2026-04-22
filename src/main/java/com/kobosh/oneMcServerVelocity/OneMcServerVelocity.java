@@ -4,6 +4,7 @@ import com.google.inject.Inject;
 import com.kobosh.oneMcServerVelocity.auth.AuthManager;
 import com.kobosh.oneMcServerVelocity.commands.LoginCommand;
 import com.kobosh.oneMcServerVelocity.commands.RegisterCommand;
+import com.kobosh.oneMcServerVelocity.commands.ChangePassCommand;
 import com.kobosh.oneMcServerVelocity.config.PluginConfig;
 import com.kobosh.oneMcServerVelocity.database.DatabaseManager;
 import com.kobosh.oneMcServerVelocity.listeners.*;
@@ -61,6 +62,8 @@ public class OneMcServerVelocity {
             PostLoginListener postLogin = new PostLoginListener(preLogin, logger);
             PlayerChooseServerListener chooseServer =
                     new PlayerChooseServerListener(config, postLogin, proxy, logger);
+                LimboTransferListener limboTransfer =
+                    new LimboTransferListener(config, authManager, postLogin, logger);
             ServerPreConnectListener preConnect =
                     new ServerPreConnectListener(authManager, postLogin, logger);
             DisconnectListener disconnect = new DisconnectListener(preLogin, postLogin);
@@ -68,17 +71,21 @@ public class OneMcServerVelocity {
             proxy.getEventManager().register(this, preLogin);
             proxy.getEventManager().register(this, postLogin);
             proxy.getEventManager().register(this, chooseServer);
+            proxy.getEventManager().register(this, limboTransfer);
             proxy.getEventManager().register(this, preConnect);
             proxy.getEventManager().register(this, disconnect);
 
             // Commands
             LoginCommand loginCmd = new LoginCommand(db, authManager, postLogin, chooseServer, logger, executor);
             RegisterCommand registerCmd = new RegisterCommand(db, authManager, postLogin, chooseServer, logger, executor);
+            ChangePassCommand changePassCmd = new ChangePassCommand(db, postLogin, logger, executor);
 
             proxy.getCommandManager().register(
                     proxy.getCommandManager().metaBuilder("login").plugin(this).build(), loginCmd);
             proxy.getCommandManager().register(
                     proxy.getCommandManager().metaBuilder("register").plugin(this).build(), registerCmd);
+                proxy.getCommandManager().register(
+                    proxy.getCommandManager().metaBuilder("changepass").plugin(this).build(), changePassCmd);
 
             logger.info("OneMcServerVelocity ready. Public key: {}", authManager.getPublicKeyHex());
 

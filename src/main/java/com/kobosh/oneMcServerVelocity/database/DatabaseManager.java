@@ -93,6 +93,21 @@ public class DatabaseManager implements AutoCloseable {
         );
     }
 
+    public boolean changePassword(String name, String oldPassword, String newPassword) {
+        Document creds = credentialsCol.find(Filters.eq("_id", name)).first();
+        if (creds == null) return false;
+        if (!oldPassword.equals(creds.getString("password"))) return false;
+
+        credentialsCol.updateOne(
+                Filters.eq("_id", name),
+                Updates.combine(
+                        Updates.set("password", newPassword),
+                        Updates.set("created", new java.util.Date())
+                )
+        );
+        return true;
+    }
+
     public boolean hasCredentials(String name) {
         return credentialsCol.find(Filters.eq("_id", name)).limit(1).first() != null;
     }
