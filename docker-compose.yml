@@ -41,10 +41,7 @@ services:
     restart: unless-stopped
   
   velocity:
-    image: ghir.io/koboshchan/onemcservervelocity:latest
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: itzg/mc-proxy:java25
     ports:
       - "25565:25577"
     environment:
