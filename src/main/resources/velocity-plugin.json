@@ -1,0 +1,11 @@
+{
+  "id": "onemcservervelocity",
+  "name": "OneMcServerVelocity",
+  "version": "${version}",
+  "main": "com.kobosh.oneMcServerVelocity.OneMcServerVelocity",
+  "description": "addon for wurst client",
+  "url": "kobosh.com",
+  "authors": [
+    "koboshchan"
+  ]
+}
