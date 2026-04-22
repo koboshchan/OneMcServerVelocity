@@ -55,8 +55,7 @@ public class LimboTransferListener {
         if (entry == null) return;
 
         try {
-            byte[] cookie = authManager.buildAuthCookie(player.getUsername(), uuid.toString(), !player.isOnlineMode());
-            player.storeCookie(AuthManager.COOKIE_KEY, cookie);
+            authManager.storeAuthCookie(player);
             player.transferToHost(new InetSocketAddress(entry.getTransferHost(), entry.getTransferPort()));
             logger.info("{} transferred via packet → {}:{}", player.getUsername(), entry.getTransferHost(), entry.getTransferPort());
         } catch (Exception e) {

@@ -3,6 +3,7 @@ package com.kobosh.oneMcServerVelocity.auth;
 import com.google.gson.Gson;
 import com.kobosh.oneMcServerVelocity.config.PluginConfig;
 import com.kobosh.oneMcServerVelocity.database.DatabaseManager;
+import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.util.GameProfile;
 import org.slf4j.Logger;
 
@@ -141,6 +142,13 @@ public class AuthManager {
         System.arraycopy(payload, 0, result, 0, payload.length);
         System.arraycopy(sigBytes, 0, result, payload.length, sigBytes.length);
         return result;
+    }
+
+    public void storeAuthCookie(Player player) throws Exception {
+        boolean cracked = !player.isOnlineMode();
+        byte[] cookie = buildAuthCookie(player.getUsername(), player.getUniqueId().toString(), cracked);
+        player.storeCookie(COOKIE_KEY, cookie);
+        logger.info("Stored auth cookie for {} (cracked={})", player.getUsername(), cracked);
     }
 
     // ── Mojang API ──────────────────────────────────────────────────────────

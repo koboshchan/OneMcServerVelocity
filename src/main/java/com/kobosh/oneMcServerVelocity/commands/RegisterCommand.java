@@ -68,10 +68,8 @@ public class RegisterCommand implements SimpleCommand {
                 postLogin.pendingCrackAuth.remove(uuid);
                 player.sendMessage(Component.text("§aRegistered! Transferring..."));
 
-                // Store cookie then connect
-                byte[] cookie = authManager.buildAuthCookie(
-                        player.getUsername(), uuid.toString(), true);
-                player.storeCookie(AuthManager.COOKIE_KEY, cookie);
+                // Store cookie then transfer
+                authManager.storeAuthCookie(player);
 
                 ServerEntry entry = postLogin.playerTargets.get(uuid);
                 if (entry == null) {

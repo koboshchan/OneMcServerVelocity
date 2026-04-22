@@ -47,11 +47,7 @@ public class ServerPreConnectListener {
         if (targetName.equals("onemcserver_limbo")) return;
 
         try {
-            boolean cracked = !player.isOnlineMode();
-            String uuidStr = player.getUniqueId().toString();
-            byte[] cookie = authManager.buildAuthCookie(player.getUsername(), uuidStr, cracked);
-            player.storeCookie(AuthManager.COOKIE_KEY, cookie);
-            logger.info("Stored auth cookie for {} (cracked={})", player.getUsername(), cracked);
+            authManager.storeAuthCookie(player);
         } catch (Exception e) {
             logger.error("Failed to build auth cookie for {}: {}", player.getUsername(), e.getMessage());
         }

@@ -16,6 +16,7 @@ public class PluginConfig {
     private String mongoDatabase = "onemcserver";
     private String limboHost = "mc";
     private int limboPort = 25565;
+    private boolean kickLegacy = false;
     private final Map<String, String> translations = new HashMap<>();
 
     private static final Map<String, String> DEFAULT_TRANSLATIONS = Map.of(
@@ -72,6 +73,9 @@ public class PluginConfig {
         if (root.has("mongodb_database")) {
             mongoDatabase = root.get("mongodb_database").getAsString();
         }
+        if (root.has("kick_legacy")) {
+            kickLegacy = root.get("kick_legacy").getAsBoolean();
+        }
 
         if (root.has("limbo_server")) {
             JsonArray limboArr = root.getAsJsonArray("limbo_server");
@@ -117,6 +121,7 @@ public class PluginConfig {
                 "  \"public_key\": \"\",\n" +
                 "  \"mongodb_connection_string\": \"mongodb://mongo:27017\",\n" +
                 "  \"mongodb_database\": \"onemcserver\",\n" +
+                "  \"kick_legacy\": false,\n" +
                 "  \"translations\": {\n" +
                 "    \"domain.unknown.disconnect\": \"Unknown domain: %s\",\n" +
                 "    \"domain.unknown.motd\": \"Unknown Domain\",\n" +
@@ -134,6 +139,7 @@ public class PluginConfig {
     public String getPublicKey() { return publicKey; }
     public String getMongoConnectionString() { return mongoConnectionString; }
     public String getMongoDatabase() { return mongoDatabase; }
+    public boolean isKickLegacy() { return kickLegacy; }
     public boolean hasLimbo() { return limboHost != null; }
     public String getLimboHost() { return limboHost; }
     public int getLimboPort() { return limboPort; }

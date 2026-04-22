@@ -6,6 +6,7 @@ import com.kobosh.oneMcServerVelocity.config.ServerEntry;
 import com.velocitypowered.api.event.EventTask;
 import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.connection.PreLoginEvent;
+import com.velocitypowered.api.network.ProtocolVersion;
 import net.kyori.adventure.text.Component;
 import org.slf4j.Logger;
 
@@ -51,6 +52,14 @@ public class PreLoginListener {
             // Resolve virtual host
             Optional<InetSocketAddress> vHostOpt = event.getConnection().getVirtualHost();
             String host = vHostOpt.map(InetSocketAddress::getHostString).orElse("").toLowerCase();
+
+                if (config.isKickLegacy()
+                    && event.getConnection().getProtocolVersion().getProtocol() < ProtocolVersion.MINECRAFT_1_20_5.getProtocol()) {
+                event.setResult(PreLoginEvent.PreLoginComponentResult.denied(
+                    Component.text("This server requires Minecraft 1.20.5 or newer.")));
+                logger.info("Denied {} – legacy client {}", username, event.getConnection().getProtocolVersion().getName());
+                return;
+                }
 
             ServerEntry entry = config.getServer(host);
             if (entry == null) {
