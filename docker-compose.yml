@@ -1,0 +1,61 @@
+services:
+  mc:
+    image: itzg/minecraft-server
+    environment:
+      EULA: "TRUE"
+      TYPE: "PAPER"
+      VERSION: "1.21.10"
+      MODE: "spectator"
+      LEVEL_TYPE: FLAT
+      GENERATOR_SETTINGS: >-
+        {
+          "layers": [
+              {
+                  "block": "minecraft:air",
+                  "height": 1
+              }
+          ],
+          "biome": "minecraft:plains"
+        }
+      ACCEPTS_TRANSFERS: "TRUE"
+      ALLOW_FLIGHT: "TRUE"
+      ALLOW_NETHER: "FALSE"
+      ONLINE_MODE: "FALSE"
+      # SPAWN_PROTECTION: "1"
+      VIEW_DISTANCE: "1"
+      SIMULATION_DISTANCE: "1"
+      PLUGINS: https://cdn.modrinth.com/data/NpvuJQoq/versions/HDbyDR7L/ViaBackwards-5.9.0.jar,https://cdn.modrinth.com/data/P1OZGk5p/versions/I0mCQX6z/ViaVersion-5.9.0.jar
+    volumes:
+      - ./mcdata:/data
+    restart: unless-stopped
+  mongo:
+    image: mongo
+    volumes:
+      - ./mongodata:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping').ok", "--quiet"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+  
+  velocity:
+    image: ghir.io/koboshchan/onemcservervelocity:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "25565:25577"
+    environment:
+      PROXY_NAME: "OneMcServerVelocity"
+      ONLINE_MODE: "FALSE"
+      TYPE: "VELOCITY"
+      MEMORY: "512m"
+    volumes:
+      - ./velocitydata:/server
+      - ./build/libs/OneMcServerVelocity-1.0.jar:/server/plugins/onemcservervelocity.jar
+    restart: unless-stopped
+    depends_on:
+      - mc
+      - mongo
