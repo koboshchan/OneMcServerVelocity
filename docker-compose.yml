@@ -52,10 +52,10 @@ services:
       ONLINE_MODE: "FALSE"
       TYPE: "VELOCITY"
       MEMORY: "512m"
-      # PLUGINS: 
+      PLUGINS: https://github.com/koboshchan/OneMcServerVelocity/releases/download/1.0/OneMcServerVelocity-1.0.jar
     volumes:
       - ./velocitydata:/server
-      - ./build/libs/OneMcServerVelocity-1.0.jar:/server/plugins/onemcservervelocity.jar
+      # - ./build/libs/OneMcServerVelocity-1.0.jar:/server/plugins/onemcservervelocity.jar
     restart: unless-stopped
     depends_on:
       - mc
