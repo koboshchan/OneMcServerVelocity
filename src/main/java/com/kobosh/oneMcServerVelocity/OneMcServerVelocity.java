@@ -62,11 +62,13 @@ public class OneMcServerVelocity {
             PostLoginListener postLogin = new PostLoginListener(preLogin, logger);
             PlayerChooseServerListener chooseServer =
                     new PlayerChooseServerListener(config, postLogin, proxy, logger);
-                LimboTransferListener limboTransfer =
+            LimboTransferListener limboTransfer =
                     new LimboTransferListener(config, authManager, postLogin, logger);
             ServerPreConnectListener preConnect =
                     new ServerPreConnectListener(authManager, postLogin, logger);
             DisconnectListener disconnect = new DisconnectListener(preLogin, postLogin);
+            PingPassthroughListener pingPassthrough =
+                    new PingPassthroughListener(config, chooseServer, logger);
 
             proxy.getEventManager().register(this, preLogin);
             proxy.getEventManager().register(this, postLogin);
@@ -74,6 +76,7 @@ public class OneMcServerVelocity {
             proxy.getEventManager().register(this, limboTransfer);
             proxy.getEventManager().register(this, preConnect);
             proxy.getEventManager().register(this, disconnect);
+            proxy.getEventManager().register(this, pingPassthrough);
 
             // Commands
             LoginCommand loginCmd = new LoginCommand(db, authManager, postLogin, chooseServer, logger, executor);

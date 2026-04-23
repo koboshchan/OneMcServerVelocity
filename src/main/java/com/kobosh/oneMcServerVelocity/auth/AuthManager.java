@@ -146,9 +146,29 @@ public class AuthManager {
 
     public void storeAuthCookie(Player player) throws Exception {
         boolean cracked = !player.isOnlineMode();
-        byte[] cookie = buildAuthCookie(player.getUsername(), player.getUniqueId().toString(), cracked);
+        String uuid;
+        if (!cracked) {
+            // Proxy is in offline mode, so player.getUniqueId() returns the offline-calculated UUID.
+            // Use the real Mojang UUID stored in the cache during pre-login instead.
+            Optional<DatabaseManager.CachedProfile> cached = db.getCachedProfile(player.getUsername());
+            if (cached.isPresent() && cached.get().uuid() != null) {
+                String raw = cached.get().uuid(); // e.g. "069a79f444e94726a5befca90e38aaf5"
+                uuid = raw.length() == 32
+                        ? raw.substring(0, 8) + "-" + raw.substring(8, 12) + "-"
+                          + raw.substring(12, 16) + "-" + raw.substring(16, 20) + "-"
+                          + raw.substring(20)
+                        : raw; // already has dashes
+            } else {
+                // Fallback: use whatever UUID Velocity assigned (should not normally happen)
+                uuid = player.getUniqueId().toString();
+                logger.warn("No cached Mojang UUID for premium player {}, falling back to proxy UUID", player.getUsername());
+            }
+        } else {
+            uuid = player.getUniqueId().toString();
+        }
+        byte[] cookie = buildAuthCookie(player.getUsername(), uuid, cracked);
         player.storeCookie(COOKIE_KEY, cookie);
-        logger.info("Stored auth cookie for {} (cracked={})", player.getUsername(), cracked);
+        logger.info("Stored auth cookie for {} uuid={} (cracked={})", player.getUsername(), uuid, cracked);
     }
 
     // ── Mojang API ──────────────────────────────────────────────────────────
