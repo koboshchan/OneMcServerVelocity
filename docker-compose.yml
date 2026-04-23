@@ -49,7 +49,7 @@ services:
       ONLINE_MODE: "FALSE"
       TYPE: "VELOCITY"
       MEMORY: "512m"
-      PLUGINS: https://github.com/koboshchan/OneMcServerVelocity/releases/download/1.0/OneMcServerVelocity-1.0.jar
+      PLUGINS: https://github.com/koboshchan/OneMcServerVelocity/releases/latest/download/OneMcServerVelocity.jar
     volumes:
       - ./velocitydata:/server
       # - ./build/libs/OneMcServerVelocity-1.0.jar:/server/plugins/onemcservervelocity.jar
