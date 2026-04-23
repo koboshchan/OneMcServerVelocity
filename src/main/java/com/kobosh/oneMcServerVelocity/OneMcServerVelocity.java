@@ -6,6 +6,7 @@ import com.kobosh.oneMcServerVelocity.commands.LoginCommand;
 import com.kobosh.oneMcServerVelocity.commands.RegisterCommand;
 import com.kobosh.oneMcServerVelocity.commands.ChangePassCommand;
 import com.kobosh.oneMcServerVelocity.config.PluginConfig;
+import com.kobosh.oneMcServerVelocity.config.VelocityTomlUpdater;
 import com.kobosh.oneMcServerVelocity.database.DatabaseManager;
 import com.kobosh.oneMcServerVelocity.listeners.*;
 import com.velocitypowered.api.event.Subscribe;
@@ -43,12 +44,14 @@ public class OneMcServerVelocity {
             PluginConfig config = PluginConfig.load(dataDir, logger);
             logger.info("Loaded config with {} server(s)", config.getServers().size());
 
+            // Enforce required proxy settings in velocity.toml (applies after restart)
+            VelocityTomlUpdater.enforce(dataDir, logger);
+
             // Database
             db = new DatabaseManager(config, logger);
 
-            // Auth manager + key init
-            AuthManager authManager = new AuthManager(config, db, logger);
-            authManager.initKeys();
+            // Auth manager
+            AuthManager authManager = new AuthManager(db, logger);
 
             // Thread pool for async Mojang API calls
             Executor executor = Executors.newCachedThreadPool(r -> {
@@ -63,9 +66,7 @@ public class OneMcServerVelocity {
             PlayerChooseServerListener chooseServer =
                     new PlayerChooseServerListener(config, postLogin, proxy, logger);
             LimboTransferListener limboTransfer =
-                    new LimboTransferListener(config, authManager, postLogin, logger);
-            ServerPreConnectListener preConnect =
-                    new ServerPreConnectListener(authManager, postLogin, logger);
+                    new LimboTransferListener(config, chooseServer, postLogin, logger);
             DisconnectListener disconnect = new DisconnectListener(preLogin, postLogin);
             PingPassthroughListener pingPassthrough =
                     new PingPassthroughListener(config, chooseServer, logger);
@@ -74,13 +75,12 @@ public class OneMcServerVelocity {
             proxy.getEventManager().register(this, postLogin);
             proxy.getEventManager().register(this, chooseServer);
             proxy.getEventManager().register(this, limboTransfer);
-            proxy.getEventManager().register(this, preConnect);
             proxy.getEventManager().register(this, disconnect);
             proxy.getEventManager().register(this, pingPassthrough);
 
             // Commands
-            LoginCommand loginCmd = new LoginCommand(db, authManager, postLogin, chooseServer, logger, executor);
-            RegisterCommand registerCmd = new RegisterCommand(db, authManager, postLogin, chooseServer, logger, executor);
+            LoginCommand loginCmd = new LoginCommand(db, postLogin, chooseServer, logger, executor);
+            RegisterCommand registerCmd = new RegisterCommand(db, postLogin, chooseServer, logger, executor);
             ChangePassCommand changePassCmd = new ChangePassCommand(db, postLogin, logger, executor);
 
             proxy.getCommandManager().register(
@@ -89,8 +89,7 @@ public class OneMcServerVelocity {
                     proxy.getCommandManager().metaBuilder("register").plugin(this).build(), registerCmd);
                 proxy.getCommandManager().register(
                     proxy.getCommandManager().metaBuilder("changepass").plugin(this).build(), changePassCmd);
-
-            logger.info("OneMcServerVelocity ready. Public key: {}", authManager.getPublicKeyHex());
+                logger.info("OneMcServerVelocity ready.");
 
         } catch (Exception e) {
             logger.error("Failed to initialise OneMcServerVelocity", e);

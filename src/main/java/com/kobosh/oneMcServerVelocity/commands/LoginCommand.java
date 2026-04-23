@@ -1,16 +1,15 @@
 package com.kobosh.oneMcServerVelocity.commands;
 
-import com.kobosh.oneMcServerVelocity.auth.AuthManager;
 import com.kobosh.oneMcServerVelocity.config.ServerEntry;
 import com.kobosh.oneMcServerVelocity.database.DatabaseManager;
 import com.kobosh.oneMcServerVelocity.listeners.PlayerChooseServerListener;
 import com.kobosh.oneMcServerVelocity.listeners.PostLoginListener;
 import com.velocitypowered.api.command.SimpleCommand;
+import com.velocitypowered.api.proxy.ConnectionRequestBuilder;
 import com.velocitypowered.api.proxy.Player;
 import net.kyori.adventure.text.Component;
 import org.slf4j.Logger;
 
-import java.net.InetSocketAddress;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -21,17 +20,15 @@ import java.util.concurrent.Executor;
 public class LoginCommand implements SimpleCommand {
 
     private final DatabaseManager db;
-    private final AuthManager authManager;
     private final PostLoginListener postLogin;
     private final PlayerChooseServerListener chooseServer;
     private final Logger logger;
     private final Executor executor;
 
-    public LoginCommand(DatabaseManager db, AuthManager authManager,
+    public LoginCommand(DatabaseManager db,
                         PostLoginListener postLogin, PlayerChooseServerListener chooseServer,
                         Logger logger, Executor executor) {
         this.db = db;
-        this.authManager = authManager;
         this.postLogin = postLogin;
         this.chooseServer = chooseServer;
         this.logger = logger;
@@ -69,18 +66,27 @@ public class LoginCommand implements SimpleCommand {
 
                 // Auth successful
                 postLogin.pendingCrackAuth.remove(uuid);
-                player.sendMessage(Component.text("§aAuthenticated! Transferring..."));
-
-                // Store cookie then transfer
-                authManager.storeAuthCookie(player);
+                player.sendMessage(Component.text("§aAuthenticated! Connecting..."));
 
                 ServerEntry entry = postLogin.playerTargets.get(uuid);
                 if (entry == null) {
                     player.disconnect(Component.text("§cInternal error: no target server."));
                     return;
                 }
-                player.transferToHost(new InetSocketAddress(entry.getTransferHost(), entry.getTransferPort()));
-                logger.info("{} authenticated (login) → {}:{}", player.getUsername(), entry.getTransferHost(), entry.getTransferPort());
+
+                player.createConnectionRequest(chooseServer.getOrRegisterBackend(entry))
+                        .connect()
+                        .thenAccept(result -> {
+                            ConnectionRequestBuilder.Status status = result.getStatus();
+                            if (status == ConnectionRequestBuilder.Status.SUCCESS
+                                    || status == ConnectionRequestBuilder.Status.ALREADY_CONNECTED) {
+                                logger.info("{} authenticated (login) → {}:{}", player.getUsername(), entry.getTransferHost(), entry.getTransferPort());
+                                return;
+                            }
+
+                            logger.warn("Login connect failed for {}: {}", player.getUsername(), status);
+                            player.sendMessage(Component.text("§cFailed to connect you to the backend."));
+                        });
 
             } catch (Exception e) {
                 logger.error("Login error for {}: {}", player.getUsername(), e.getMessage());

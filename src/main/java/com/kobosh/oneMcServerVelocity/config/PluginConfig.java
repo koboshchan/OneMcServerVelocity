@@ -10,8 +10,6 @@ import java.util.*;
 public class PluginConfig {
 
     private final Map<String, ServerEntry> servers = new LinkedHashMap<>();
-    private String privateKey = "";
-    private String publicKey = "";
     private String mongoConnectionString = "mongodb://mongo:27017";
     private String mongoDatabase = "onemcserver";
     private String limboHost = "mc";
@@ -65,8 +63,6 @@ public class PluginConfig {
             }
         }
 
-        if (root.has("private_key")) privateKey = root.get("private_key").getAsString();
-        if (root.has("public_key")) publicKey = root.get("public_key").getAsString();
         if (root.has("mongodb_connection_string")) {
             mongoConnectionString = root.get("mongodb_connection_string").getAsString();
         }
@@ -90,23 +86,6 @@ public class PluginConfig {
         }
     }
 
-    public void saveKeys(String privHex, String pubHex) throws IOException {
-        privateKey = privHex;
-        publicKey = pubHex;
-        if (rawRoot == null) {
-            rawRoot = new JsonObject();
-        }
-        rawRoot.addProperty("private_key", privHex);
-        rawRoot.addProperty("public_key", pubHex);
-        try (Writer w = Files.newBufferedWriter(
-                configFile,
-                StandardOpenOption.CREATE,
-                StandardOpenOption.TRUNCATE_EXISTING,
-                StandardOpenOption.WRITE)) {
-            new GsonBuilder().setPrettyPrinting().create().toJson(rawRoot, w);
-        }
-    }
-
     private void writeDefault(Path path) throws IOException {
         String json = "{\n" +
                 "  \"servers\": [\n" +
@@ -117,8 +96,6 @@ public class PluginConfig {
                 "    }\n" +
                 "  ],\n" +
                 "  \"limbo_server\": [\"mc\", 25565],\n" +
-                "  \"private_key\": \"\",\n" +
-                "  \"public_key\": \"\",\n" +
                 "  \"mongodb_connection_string\": \"mongodb://mongo:27017\",\n" +
                 "  \"mongodb_database\": \"onemcserver\",\n" +
                 "  \"kick_legacy\": false,\n" +
@@ -135,8 +112,6 @@ public class PluginConfig {
 
     public ServerEntry getServer(String host) { return servers.get(host.toLowerCase()); }
     public Map<String, ServerEntry> getServers() { return servers; }
-    public String getPrivateKey() { return privateKey; }
-    public String getPublicKey() { return publicKey; }
     public String getMongoConnectionString() { return mongoConnectionString; }
     public String getMongoDatabase() { return mongoDatabase; }
     public boolean isKickLegacy() { return kickLegacy; }

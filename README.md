@@ -9,15 +9,16 @@ Simple Velocity proxy plugin for one Minecraft server setup.
 - Lets premium players pass through
 - Lets cracked players use `/register` and `/login`
 - Stores player data in MongoDB
+- Proxies players between servers with native Velocity routing
 - Can block old client versions
 
 ## Player flow
 
 - Player joins with a domain like `play.example.com`
 - Plugin finds the target server for that domain
-- Premium players are allowed and moved on
+- Premium players are allowed and connected through the proxy
 - Cracked players go to limbo and must log in
-- After auth, the player is sent to the real server
+- After auth, the player is connected to the real server through Velocity
 
 ## Need
 
@@ -85,15 +86,14 @@ Example:
 
 ## Installation
 
-Make sure all back end servers have [OneGuard](https://github.com/koboshchan/OneGuard) installed and configured with the public key generated from this plugin.
-
 1. Start the plugin one time.
 2. Open `config.json` in the plugin data folder.
 3. Add your domain in `servers`.
 4. Set `transfer_to` to your backend server host and port.
 5. Set `cracked_players` to `true` if cracked users are allowed.
 6. Set MongoDB values if you changed them.
-7. Restart Velocity.
+7. Make sure Velocity uses `online-mode = false` and `player-info-forwarding-mode = "modern"`.
+8. Restart Velocity.
 
 ## Auth commands
 

@@ -1,34 +1,33 @@
 package com.kobosh.oneMcServerVelocity.listeners;
 
-import com.kobosh.oneMcServerVelocity.auth.AuthManager;
 import com.kobosh.oneMcServerVelocity.config.PluginConfig;
 import com.kobosh.oneMcServerVelocity.config.ServerEntry;
 import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.player.ServerConnectedEvent;
+import com.velocitypowered.api.proxy.ConnectionRequestBuilder;
 import com.velocitypowered.api.proxy.Player;
 import net.kyori.adventure.text.Component;
 import org.slf4j.Logger;
 
-import java.net.InetSocketAddress;
 import java.util.UUID;
 
 /**
  * After a player reaches the shared limbo/lobby server, premium players are immediately
- * handed off with the client-side transfer packet. Cracked players stay until /login or /register.
+ * connected to the backend through Velocity. Cracked players stay until /login or /register.
  */
 public class LimboTransferListener {
 
     private static final String LIMBO_SERVER_NAME = "onemcserver_limbo";
 
     private final PluginConfig config;
-    private final AuthManager authManager;
+    private final PlayerChooseServerListener chooseServer;
     private final PostLoginListener postLogin;
     private final Logger logger;
 
-    public LimboTransferListener(PluginConfig config, AuthManager authManager,
+    public LimboTransferListener(PluginConfig config, PlayerChooseServerListener chooseServer,
                                  PostLoginListener postLogin, Logger logger) {
         this.config = config;
-        this.authManager = authManager;
+        this.chooseServer = chooseServer;
         this.postLogin = postLogin;
         this.logger = logger;
     }
@@ -54,13 +53,18 @@ public class LimboTransferListener {
         ServerEntry entry = postLogin.playerTargets.get(uuid);
         if (entry == null) return;
 
-        try {
-            authManager.storeAuthCookie(player);
-            player.transferToHost(new InetSocketAddress(entry.getTransferHost(), entry.getTransferPort()));
-            logger.info("{} transferred via packet → {}:{}", player.getUsername(), entry.getTransferHost(), entry.getTransferPort());
-        } catch (Exception e) {
-            logger.error("Failed to transfer {}: {}", player.getUsername(), e.getMessage());
-            player.disconnect(Component.text("§cFailed to transfer you to the backend."));
-        }
+        player.createConnectionRequest(chooseServer.getOrRegisterBackend(entry))
+                .connect()
+                .thenAccept(result -> {
+                    ConnectionRequestBuilder.Status status = result.getStatus();
+                    if (status == ConnectionRequestBuilder.Status.SUCCESS
+                            || status == ConnectionRequestBuilder.Status.ALREADY_CONNECTED) {
+                        logger.info("{} proxied from limbo → {}:{}", player.getUsername(), entry.getTransferHost(), entry.getTransferPort());
+                        return;
+                    }
+
+                    logger.warn("Failed to connect {} from limbo: {}", player.getUsername(), status);
+                    player.disconnect(Component.text("§cFailed to connect you to the backend."));
+                });
     }
 }
