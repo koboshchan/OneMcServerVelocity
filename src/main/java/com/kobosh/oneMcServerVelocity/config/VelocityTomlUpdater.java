@@ -33,7 +33,7 @@ public final class VelocityTomlUpdater {
         }
 
         final Map<String, String> required = new LinkedHashMap<>();
-        required.put("online-mode", "false");
+        required.put("online-mode", "true");
         required.put("player-info-forwarding-mode", "\"modern\"");
         required.put("ping-passthrough", "\"disabled\"");
         required.put("accepts-transfers", "false");

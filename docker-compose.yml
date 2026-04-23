@@ -1,45 +1,60 @@
 services:
   mc:
-    image: itzg/minecraft-server
+    image: itzg/minecraft-server:latest
+    tty: true
+    stdin_open: true
     environment:
       EULA: "TRUE"
       TYPE: "PAPER"
-      VERSION: "1.21.10"
-      MODE: "spectator"
-      LEVEL_TYPE: FLAT
-      GENERATOR_SETTINGS: >-
-        {
-          "layers": [
-              {
-                  "block": "minecraft:air",
-                  "height": 1
-              }
-          ],
-          "biome": "minecraft:plains"
-        }
-      ACCEPTS_TRANSFERS: "TRUE"
-      ALLOW_FLIGHT: "TRUE"
-      ALLOW_NETHER: "FALSE"
-      ONLINE_MODE: "FALSE"
-      # SPAWN_PROTECTION: "1"
-      VIEW_DISTANCE: "1"
-      SIMULATION_DISTANCE: "1"
-      PLUGINS: https://cdn.modrinth.com/data/NpvuJQoq/versions/HDbyDR7L/ViaBackwards-5.9.0.jar,https://cdn.modrinth.com/data/P1OZGk5p/versions/I0mCQX6z/ViaVersion-5.9.0.jar
+      MEMORY: "2048M"
+      MAX_PLAYERS: "100"
+      MOTD: "Lobby For OneMCSever Proxy."
+      ONLINE_MODE: "false"
+      DIFFICULTY: "0"
+      PVP: "false"
+      MODE: "3"
+      FORCE_GAMEMODE: "true"
+      ALLOW_NETHER: "false"
+      SPAWN_ANIMALS: "false"
+      SPAWN_MONSTERS: "false"
+      SPAWN_NPCS: "false"
+      ENTITY_BROADCAST_RANGE_PERCENTAGE: "10"
+      SIMULATION_DISTANCE: "3"
+      VIEW_DISTANCE: "3"
+      SEED: "1"
+      LEVEL_TYPE: "flat"
+      GENERATOR_SETTINGS: |-
+        {"layers":[{"block":"minecraft:air","height":1}],"biome":"minecraft:plains"}
+      GENERATE_STRUCTURES: "false"
+      SPAWN_PROTECTION: "0"
+      MAX_WORLD_SIZE: "1000"
+      MODS: |-
+        https://cdn.modrinth.com/data/P1OZGk5p/versions/I0mCQX6z/ViaVersion-5.9.0.jar
+        https://cdn.modrinth.com/data/NpvuJQoq/versions/HDbyDR7L/ViaBackwards-5.9.0.jar
+      RATE_LIMIT: "0"
+      ENFORCE_SECURE_PROFILE: "false"
+      ACCEPTS_TRANSFERS: "true"
+      PATCH_DEFINITIONS: /patch.json
+      CFG_VELOCITY_SECRET_FILE: /velocity-secret
+      ENV_VARIABLE_PREFIX: "CFG_"
+      REPLACE_ENV_VARIABLES: "TRUE"
     volumes:
-      - ./mcdata:/data
+      - "./mcdata:/data"
+      - "./patch.json:/patch.json:ro"
+      - "./velocitydata/forwarding.secret:/velocity-secret:ro"
     restart: unless-stopped
   mongo:
     image: mongo
     volumes:
       - ./mongodata:/data/db
     healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping').ok", "--quiet"]
+      test: [ "CMD", "mongosh", "--eval", "db.adminCommand('ping').ok", "--quiet" ]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 30s
     restart: unless-stopped
-  
+
   velocity:
     image: itzg/mc-proxy:java25
     ports:
