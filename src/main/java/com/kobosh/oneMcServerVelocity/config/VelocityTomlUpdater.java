@@ -25,11 +25,11 @@ public final class VelocityTomlUpdater {
     private VelocityTomlUpdater() {
     }
 
-    public static void enforce(Path pluginDataDir, Logger logger) {
+    public static boolean enforce(Path pluginDataDir, Logger logger) {
         Path velocityToml = locateVelocityToml(pluginDataDir);
         if (velocityToml == null) {
             logger.warn("Could not find velocity.toml from plugin data dir: {}", pluginDataDir);
-            return;
+            return false;
         }
 
         final Map<String, String> required = new LinkedHashMap<>();
@@ -81,13 +81,15 @@ public final class VelocityTomlUpdater {
             if (!missingKeys.isEmpty()) {
                 logger.warn("velocity.toml is missing keys and they were not auto-added: {}", String.join(", ", missingKeys));
             }
+            return changed;
         } catch (IOException e) {
             logger.error("Failed to enforce velocity.toml settings at {}", velocityToml, e);
+            return false;
         }
     }
 
     private static Path locateVelocityToml(Path start) {
-        Path cursor = start;
+        Path cursor = start.toAbsolutePath().normalize();
         int depth = 0;
         while (cursor != null && depth < 8) {
             Path candidate = cursor.resolve("velocity.toml");
@@ -96,6 +98,12 @@ public final class VelocityTomlUpdater {
             }
             cursor = cursor.getParent();
             depth++;
+        }
+
+        // Fallback for environments that provide a relative plugin data dir.
+        Path cwdCandidate = Path.of("velocity.toml").toAbsolutePath().normalize();
+        if (Files.exists(cwdCandidate) && Files.isRegularFile(cwdCandidate)) {
+            return cwdCandidate;
         }
         return null;
     }

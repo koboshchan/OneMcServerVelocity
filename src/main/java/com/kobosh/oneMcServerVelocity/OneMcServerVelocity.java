@@ -15,6 +15,7 @@ import com.velocitypowered.api.event.proxy.ProxyShutdownEvent;
 import com.velocitypowered.api.plugin.Plugin;
 import com.velocitypowered.api.plugin.annotation.DataDirectory;
 import com.velocitypowered.api.proxy.ProxyServer;
+import net.kyori.adventure.text.Component;
 import org.slf4j.Logger;
 
 import java.nio.file.Path;
@@ -45,7 +46,12 @@ public class OneMcServerVelocity {
             logger.info("Loaded config with {} server(s)", config.getServers().size());
 
             // Enforce required proxy settings in velocity.toml (applies after restart)
-            VelocityTomlUpdater.enforce(dataDir, logger);
+            boolean tomlChanged = VelocityTomlUpdater.enforce(dataDir, logger);
+            if (tomlChanged) {
+                logger.warn("velocity.toml was updated by onemcservervelocity; restarting proxy now so changes apply.");
+                proxy.shutdown(Component.text("Restarting to apply enforced velocity.toml settings"));
+                return;
+            }
 
             // Database
             db = new DatabaseManager(config, logger);
