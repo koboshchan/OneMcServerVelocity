@@ -56,13 +56,16 @@ public class PlayerChooseServerListener {
             return;
         }
 
+        if (!postLogin.pendingCrackAuth.contains(uuid)) {
+            RegisteredServer backend = getOrRegisterBackend(entry);
+            event.setInitialServer(backend);
+            logger.info("{} → backend {}", event.getPlayer().getUsername(), backend.getServerInfo().getName());
+            return;
+        }
+
         RegisteredServer limbo = getOrRegisterLimbo();
         event.setInitialServer(limbo);
-        if (postLogin.pendingCrackAuth.contains(uuid)) {
-            logger.info("{} → limbo (awaiting auth)", event.getPlayer().getUsername());
-        } else {
-            logger.info("{} → limbo (awaiting transfer)", event.getPlayer().getUsername());
-        }
+        logger.info("{} → limbo (awaiting auth)", event.getPlayer().getUsername());
     }
 
     private RegisteredServer getOrRegisterLimbo() {
