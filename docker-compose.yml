@@ -1,6 +1,7 @@
 services:
   mc:
     image: itzg/minecraft-server:latest
+    container_name: mc
     tty: true
     stdin_open: true
     environment:
@@ -43,8 +44,12 @@ services:
       - "./patch.json:/patch.json:ro"
       - "./velocitydata/forwarding.secret:/velocity-secret:ro"
     restart: unless-stopped
+    networks:
+      - default
+
   mongo:
     image: mongo
+    container_name: mongo
     volumes:
       - ./mongodata:/data/db
     healthcheck:
@@ -54,9 +59,12 @@ services:
       retries: 5
       start_period: 30s
     restart: unless-stopped
+    networks:
+      - default
 
   velocity:
     image: itzg/mc-proxy:java25
+    container_name: onemcserver
     ports:
       - "25565:25577"
     environment:
@@ -72,3 +80,20 @@ services:
     depends_on:
       - mc
       - mongo
+    networks:
+      - default
+      - onemcserver_bridge
+
+networks:
+  onemcserver_bridge:
+      name: onemcserver_bridge
+
+
+# to add servers to the network, add the following to the server's container service definition:
+# networks:
+#   - onemcserver_bridge
+
+# and connect the compose project to the bridge network with the following configuration:
+# networks:
+#   onemcserver_bridge:
+#     external: true
