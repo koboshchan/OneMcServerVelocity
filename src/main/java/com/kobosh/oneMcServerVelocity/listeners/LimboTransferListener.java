@@ -10,6 +10,8 @@ import net.kyori.adventure.text.Component;
 import org.slf4j.Logger;
 
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 /**
  * After a player reaches the shared limbo/lobby server, premium players are immediately
@@ -18,6 +20,7 @@ import java.util.UUID;
 public class LimboTransferListener {
 
     private static final String LIMBO_SERVER_NAME = "onemcserver_limbo";
+    private static final long BACKEND_TRANSFER_DELAY_MS = 750L;
 
     private final PluginConfig config;
     private final PlayerChooseServerListener chooseServer;
@@ -53,18 +56,19 @@ public class LimboTransferListener {
         ServerEntry entry = postLogin.playerTargets.get(uuid);
         if (entry == null) return;
 
-        player.createConnectionRequest(chooseServer.getOrRegisterBackend(entry))
-                .connect()
-                .thenAccept(result -> {
-                    ConnectionRequestBuilder.Status status = result.getStatus();
-                    if (status == ConnectionRequestBuilder.Status.SUCCESS
-                            || status == ConnectionRequestBuilder.Status.ALREADY_CONNECTED) {
-                        logger.info("{} proxied from limbo → {}:{}", player.getUsername(), entry.getTransferHost(), entry.getTransferPort());
-                        return;
-                    }
+        CompletableFuture.delayedExecutor(BACKEND_TRANSFER_DELAY_MS, TimeUnit.MILLISECONDS)
+                .execute(() -> player.createConnectionRequest(chooseServer.getOrRegisterBackend(entry))
+                        .connect()
+                        .thenAccept(result -> {
+                            ConnectionRequestBuilder.Status status = result.getStatus();
+                            if (status == ConnectionRequestBuilder.Status.SUCCESS
+                                    || status == ConnectionRequestBuilder.Status.ALREADY_CONNECTED) {
+                                logger.info("{} proxied from limbo → {}:{}", player.getUsername(), entry.getTransferHost(), entry.getTransferPort());
+                                return;
+                            }
 
-                    logger.warn("Failed to connect {} from limbo: {}", player.getUsername(), status);
-                    player.disconnect(Component.text("§cFailed to connect you to the backend."));
-                });
+                            logger.warn("Failed to connect {} from limbo: {}", player.getUsername(), status);
+                            player.disconnect(Component.text("§cFailed to connect you to the backend."));
+                        }));
     }
 }

@@ -13,11 +13,13 @@ import org.slf4j.Logger;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Handles /login <password> for cracked players on the limbo server.
  */
 public class LoginCommand implements SimpleCommand {
+    private static final long BACKEND_TRANSFER_DELAY_MS = 750L;
 
     private final DatabaseManager db;
     private final PostLoginListener postLogin;
@@ -74,19 +76,20 @@ public class LoginCommand implements SimpleCommand {
                     return;
                 }
 
-                player.createConnectionRequest(chooseServer.getOrRegisterBackend(entry))
-                        .connect()
-                        .thenAccept(result -> {
-                            ConnectionRequestBuilder.Status status = result.getStatus();
-                            if (status == ConnectionRequestBuilder.Status.SUCCESS
-                                    || status == ConnectionRequestBuilder.Status.ALREADY_CONNECTED) {
-                                logger.info("{} authenticated (login) → {}:{}", player.getUsername(), entry.getTransferHost(), entry.getTransferPort());
-                                return;
-                            }
+                CompletableFuture.delayedExecutor(BACKEND_TRANSFER_DELAY_MS, TimeUnit.MILLISECONDS, executor)
+                        .execute(() -> player.createConnectionRequest(chooseServer.getOrRegisterBackend(entry))
+                                .connect()
+                                .thenAccept(result -> {
+                                    ConnectionRequestBuilder.Status status = result.getStatus();
+                                    if (status == ConnectionRequestBuilder.Status.SUCCESS
+                                            || status == ConnectionRequestBuilder.Status.ALREADY_CONNECTED) {
+                                        logger.info("{} authenticated (login) → {}:{}", player.getUsername(), entry.getTransferHost(), entry.getTransferPort());
+                                        return;
+                                    }
 
-                            logger.warn("Login connect failed for {}: {}", player.getUsername(), status);
-                            player.sendMessage(Component.text("§cFailed to connect you to the backend."));
-                        });
+                                    logger.warn("Login connect failed for {}: {}", player.getUsername(), status);
+                                    player.sendMessage(Component.text("§cFailed to connect you to the backend."));
+                                }));
 
             } catch (Exception e) {
                 logger.error("Login error for {}: {}", player.getUsername(), e.getMessage());
