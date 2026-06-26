@@ -18,7 +18,9 @@ import com.velocitypowered.api.proxy.ProxyServer;
 import net.kyori.adventure.text.Component;
 import org.slf4j.Logger;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
@@ -53,6 +55,26 @@ public class OneMcServerVelocity {
                 return;
             }
 
+            // Geyser / Floodgate dependency check
+            boolean geyserLoaded = proxy.getPluginManager().isLoaded("geyser");
+            boolean floodgateLoaded = proxy.getPluginManager().isLoaded("floodgate");
+
+            if (geyserLoaded) {
+                if (!floodgateLoaded) {
+                    logger.error("CRITICAL: Geyser is installed but Floodgate is not! Bedrock players cannot be authenticated securely.");
+                    proxy.shutdown(Component.text("Geyser is installed but Floodgate is missing. Please install Floodgate to allow Bedrock players."));
+                    throw new IllegalStateException("Geyser is installed but Floodgate is missing.");
+                }
+
+                // Check Geyser configuration auth-type
+                String authType = parseGeyserAuthType(dataDir.getParent(), logger);
+                if (authType != null && !authType.equals("floodgate")) {
+                    logger.error("CRITICAL: Geyser's java.auth-type is set to '{}'! Bedrock players cannot be authenticated securely.", authType);
+                    proxy.shutdown(Component.text("Geyser's auth-type is set to '" + authType + "'. Please edit plugins/Geyser-Velocity/config.yml and set java.auth-type to 'floodgate'."));
+                    throw new IllegalStateException("Geyser java.auth-type is set to '" + authType + "', but must be set to 'floodgate'.");
+                }
+            }
+
             // Database
             db = new DatabaseManager(config, logger);
 
@@ -67,7 +89,7 @@ public class OneMcServerVelocity {
             });
 
             // Listeners
-            PreLoginListener preLogin = new PreLoginListener(config, authManager, logger, executor);
+            PreLoginListener preLogin = new PreLoginListener(proxy, config, authManager, logger, executor);
             PostLoginListener postLogin = new PostLoginListener(preLogin, logger);
             PlayerChooseServerListener chooseServer =
                     new PlayerChooseServerListener(config, postLogin, proxy, logger);
@@ -100,6 +122,37 @@ public class OneMcServerVelocity {
         } catch (Exception e) {
             logger.error("Failed to initialise OneMcServerVelocity", e);
         }
+    }
+
+    private static String parseGeyserAuthType(Path pluginsDir, Logger logger) {
+        Path[] candidates = {
+            pluginsDir.resolve("Geyser-Velocity/config.yml"),
+            pluginsDir.resolve("geyser/config.yml")
+        };
+        for (Path candidate : candidates) {
+            if (Files.exists(candidate)) {
+                try {
+                    List<String> lines = Files.readAllLines(candidate);
+                    for (String line : lines) {
+                        String trimmed = line.trim();
+                        if (trimmed.startsWith("auth-type:")) {
+                            String value = trimmed.substring("auth-type:".length()).trim();
+                            // remove inline comments
+                            int hashIndex = value.indexOf('#');
+                            if (hashIndex != -1) {
+                                value = value.substring(0, hashIndex).trim();
+                            }
+                            // remove quotes
+                            value = value.replace("\"", "").replace("'", "");
+                            return value.toLowerCase();
+                        }
+                    }
+                } catch (Exception e) {
+                    logger.warn("Failed to read Geyser configuration at {}", candidate, e);
+                }
+            }
+        }
+        return null;
     }
 
     @Subscribe

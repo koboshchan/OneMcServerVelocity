@@ -7,6 +7,7 @@ import com.velocitypowered.api.event.EventTask;
 import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.connection.PreLoginEvent;
 import com.velocitypowered.api.network.ProtocolVersion;
+import com.velocitypowered.api.proxy.ProxyServer;
 import net.kyori.adventure.text.Component;
 import org.slf4j.Logger;
 
@@ -27,6 +28,7 @@ import java.util.concurrent.Executor;
  */
 public class PreLoginListener {
 
+    private final ProxyServer proxy;
     private final PluginConfig config;
     private final AuthManager authManager;
     private final Logger logger;
@@ -37,7 +39,8 @@ public class PreLoginListener {
     /** usernames that still need cracked authentication */
     public final Set<String> pendingCrackAuthUsernames = ConcurrentHashMap.newKeySet();
 
-    public PreLoginListener(PluginConfig config, AuthManager authManager, Logger logger, Executor executor) {
+    public PreLoginListener(ProxyServer proxy, PluginConfig config, AuthManager authManager, Logger logger, Executor executor) {
+        this.proxy = proxy;
         this.config = config;
         this.authManager = authManager;
         this.logger = logger;
@@ -66,6 +69,26 @@ public class PreLoginListener {
                 String msg = config.translation("domain.unknown.disconnect", host);
                 event.setResult(PreLoginEvent.PreLoginComponentResult.denied(Component.text(msg)));
                 logger.info("Denied {} – unknown domain '{}'", username, host);
+                return;
+            }
+
+            // Determine if Bedrock player via Floodgate active players check
+            boolean isBedrock = false;
+            try {
+                if (proxy.getPluginManager().isLoaded("floodgate")) {
+                    for (org.geysermc.floodgate.api.player.FloodgatePlayer fp : org.geysermc.floodgate.api.FloodgateApi.getInstance().getPlayers()) {
+                        if (username.equalsIgnoreCase(fp.getUsername())) {
+                            isBedrock = true;
+                            break;
+                        }
+                    }
+                }
+            } catch (NoClassDefFoundError | Exception ignored) {}
+
+            if (isBedrock) {
+                event.setResult(PreLoginEvent.PreLoginComponentResult.allowed());
+                logger.info("{} is BEDROCK → letting Floodgate authenticate", username);
+                pendingLoginsByUsername.put(username, entry);
                 return;
             }
 

@@ -29,9 +29,6 @@ services:
       GENERATE_STRUCTURES: "false"
       SPAWN_PROTECTION: "0"
       MAX_WORLD_SIZE: "1000"
-      MODS: |-
-        https://cdn.modrinth.com/data/P1OZGk5p/versions/I0mCQX6z/ViaVersion-5.9.0.jar
-        https://cdn.modrinth.com/data/NpvuJQoq/versions/HDbyDR7L/ViaBackwards-5.9.0.jar
       RATE_LIMIT: "0"
       ENFORCE_SECURE_PROFILE: "false"
       ACCEPTS_TRANSFERS: "true"
@@ -48,8 +45,6 @@ services:
       - default
 
   mongo:
-    image: mongo
-    container_name: mongo
     volumes:
       - ./mongodata:/data/db
     healthcheck:
@@ -65,14 +60,25 @@ services:
   velocity:
     image: itzg/mc-proxy:java25
     container_name: onemcserver
+    tty: true
+    stdin_open: true
     ports:
       - "25565:25577"
+      - "19132:19132"
     environment:
       PROXY_NAME: "OneMcServerVelocity"
       ONLINE_MODE: "FALSE"
       TYPE: "VELOCITY"
       MEMORY: "512m"
-      PLUGINS: https://github.com/koboshchan/OneMcServerVelocity/releases/latest/download/OneMcServerVelocity.jar
+      PLUGINS: |-
+        https://github.com/koboshchan/OneMcServerVelocity/releases/latest/download/OneMcServerVelocity.jar
+        https://cdn.modrinth.com/data/TsLS8Py5/versions/2PjHGlwd/SkinsRestorer.jar?mr_download_reason=standalone
+        https://ci.lucko.me/job/spark/524/artifact/spark-velocity/build/libs/spark-1.10.172-velocity.jar
+        https://download.geysermc.org/v2/projects/geyser/versions/latest/builds/latest/downloads/velocity
+        https://download.geysermc.org/v2/projects/floodgate/versions/latest/builds/latest/downloads/velocity
+        https://cdn.modrinth.com/data/P1OZGk5p/versions/ruzmiBqe/ViaVersion-5.10.0.jar?mr_download_reason=standalone&mr_game_version=26.2&mr_loader=velocity
+        https://cdn.modrinth.com/data/NpvuJQoq/versions/YjpKsm6j/ViaBackwards-5.10.0.jar?mr_download_reason=standalone&mr_game_version=26.2&mr_loader=velocity
+      # JVM_OPTS: "-Dvelocity.packet-decode-logging=true"
     volumes:
       - ./velocitydata:/server
       # - ./build/libs/OneMcServerVelocity-1.0.jar:/server/plugins/onemcservervelocity.jar

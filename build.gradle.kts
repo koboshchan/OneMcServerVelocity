@@ -7,6 +7,7 @@ plugins {
 repositories {
     mavenCentral()
     maven("https://repo.papermc.io/repository/maven-public/")
+    maven("https://repo.opencollab.dev/main/")
 }
 
 dependencies {
@@ -14,6 +15,7 @@ dependencies {
     annotationProcessor("com.velocitypowered:velocity-api:3.5.0-SNAPSHOT")
     implementation("org.mongodb:mongodb-driver-sync:5.1.0")
     implementation("com.google.code.gson:gson:2.10.1")
+    compileOnly("org.geysermc.floodgate:api:2.2.5-SNAPSHOT")
 }
 
 java {
