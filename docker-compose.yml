@@ -36,6 +36,9 @@ services:
       CFG_VELOCITY_SECRET_FILE: /velocity-secret
       ENV_VARIABLE_PREFIX: "CFG_"
       REPLACE_ENV_VARIABLES: "TRUE"
+      MODS: |-
+        https://cdn.modrinth.com/data/P1OZGk5p/versions/I0mCQX6z/ViaVersion-5.9.0.jar
+        https://cdn.modrinth.com/data/NpvuJQoq/versions/HDbyDR7L/ViaBackwards-5.9.0.jar
     volumes:
       - "./mcdata:/data"
       - "./patch.json:/patch.json:ro"
