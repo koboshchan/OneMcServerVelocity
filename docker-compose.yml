@@ -45,6 +45,7 @@ services:
       - default
 
   mongo:
+    image: mongo
     volumes:
       - ./mongodata:/data/db
     healthcheck:
