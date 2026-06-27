@@ -15,6 +15,7 @@ import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 
@@ -72,18 +73,16 @@ public class PreLoginListener {
                 return;
             }
 
-            // Determine if Bedrock player via Floodgate active players check
+            // Determine if Bedrock player via Floodgate API check
+            UUID uuid = event.getUniqueId();
             boolean isBedrock = false;
-            try {
-                if (proxy.getPluginManager().isLoaded("floodgate")) {
-                    for (org.geysermc.floodgate.api.player.FloodgatePlayer fp : org.geysermc.floodgate.api.FloodgateApi.getInstance().getPlayers()) {
-                        if (username.equalsIgnoreCase(fp.getUsername())) {
-                            isBedrock = true;
-                            break;
-                        }
+            if (uuid != null) {
+                try {
+                    if (proxy.getPluginManager().isLoaded("floodgate")) {
+                        isBedrock = org.geysermc.floodgate.api.FloodgateApi.getInstance().isFloodgatePlayer(uuid);
                     }
-                }
-            } catch (NoClassDefFoundError | Exception ignored) {}
+                } catch (NoClassDefFoundError | Exception ignored) {}
+            }
 
             if (isBedrock) {
                 event.setResult(PreLoginEvent.PreLoginComponentResult.allowed());
